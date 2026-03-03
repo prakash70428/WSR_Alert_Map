@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState ,useCallback } from 'react';
 import { getAllActiveDisasters, getDisastersByType } from '../services/nasaApi';
 
 const DisasterContext = createContext(undefined);
@@ -32,34 +32,63 @@ export function DisasterProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchDisasters = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getAllActiveDisasters();
-      setDisasters(data);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error('Failed to load NASA disaster data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchDisasters = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const data = await getAllActiveDisasters();
+  //     setDisasters(data);
+  //     setLastUpdated(new Date());
+  //   } catch (error) {
+  //     console.error('Failed to load NASA disaster data:', error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-  const getDisastersNearLocation = (lat, lon, radiusMiles = 100) => {
-    return disasters
-      .map((disaster) => {
-        if (!disaster.coordinates) return null;
-        const distance = calculateDistance(
-          lat,
-          lon,
-          disaster.coordinates.lat,
-          disaster.coordinates.lon
-        );
-        return { ...disaster, distance };
-      })
-      .filter((item) => item && item.distance <= radiusMiles)
-      .sort((a, b) => a.distance - b.distance);
-  };
+  const fetchDisasters = useCallback(async () => {
+  setIsLoading(true);
+  try {
+    const data = await getAllActiveDisasters();
+    setDisasters(data);
+    setLastUpdated(new Date());
+  } catch (error) {
+    console.error('Failed to load NASA disaster data:', error);
+  } finally {
+    setIsLoading(false);
+  }
+}, []);
+
+  // const getDisastersNearLocation = (lat, lon, radiusMiles = 100) => {
+  //   return disasters
+  //     .map((disaster) => {
+  //       if (!disaster.coordinates) return null;
+  //       const distance = calculateDistance(
+  //         lat,
+  //         lon,
+  //         disaster.coordinates.lat,
+  //         disaster.coordinates.lon
+  //       );
+  //       return { ...disaster, distance };
+  //     })
+  //     .filter((item) => item && item.distance <= radiusMiles)
+  //     .sort((a, b) => a.distance - b.distance);
+  // };
+
+  const getDisastersNearLocation = useCallback((lat, lon, radiusMiles = 100) => {
+  return disasters
+    .map((disaster) => {
+      if (!disaster.coordinates) return null;
+      const distance = calculateDistance(
+        lat,
+        lon,
+        disaster.coordinates.lat,
+        disaster.coordinates.lon
+      );
+      return { ...disaster, distance };
+    })
+    .filter((item) => item && item.distance <= radiusMiles)
+    .sort((a, b) => a.distance - b.distance);
+}, [disasters]);
 
   const getDisastersByTypeHelper = async (category, lat, lon, radiusMiles = 50) => {
     return getDisastersByType(category, lat, lon, radiusMiles);
@@ -75,7 +104,7 @@ export function DisasterProvider({ children }) {
       getDisastersNearLocation,
       getDisastersByType: getDisastersByTypeHelper
     }),
-    [disasters, userLocation, isLoading, lastUpdated]
+    [disasters, userLocation, isLoading, lastUpdated,fetchDisasters,getDisastersNearLocation]
   );
 
   return <DisasterContext.Provider value={contextValue}>{children}</DisasterContext.Provider>;

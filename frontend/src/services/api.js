@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API base URL - uses proxy in development
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+const API_BASE = `${process.env.REACT_APP_API_URL}/api'`;
 
 /**
  * API Client for Wildfire Smoke Alert backend
